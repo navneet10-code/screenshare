@@ -45,7 +45,7 @@ const requestScreenShare = function (constraints, installOnly) {
   }
   if (!window.chrome) {
     if (installOnly) {
-      return;
+      return Promise.resolve();
     }
     const ffConstraints = (constraints && constraints.firefox) || {
       audio: false,
@@ -54,7 +54,11 @@ const requestScreenShare = function (constraints, installOnly) {
     return window.navigator.mediaDevices.getUserMedia(ffConstraints);
   } else {
     return new Promise(function (resolve, reject) {
-      window.addEventListener('message', function (event) {
+      const handleMessage = function (event) {
+        if (event && event.data === 'process-tick') {
+          return; // ignore this, don't resolve or reject
+        }
+        window.removeEventListener('message', handleMessage);
         if (!event || !event.data.sourceId) {
           if (event.data.err) {
             return reject(event.data.err);
@@ -77,7 +81,8 @@ const requestScreenShare = function (constraints, installOnly) {
           }
         };
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
-      });
+      };
+      window.addEventListener('message', handleMessage);
       window.parent.postMessage({ type: 'getScreen', installOnly, id: 1, url: window.location.origin }, '*');
     });
   }
