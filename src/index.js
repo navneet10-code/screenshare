@@ -25,6 +25,9 @@ const initializeScreenShare = function (webstoreUrl) {
         return event.source.postMessage({ err }, '*');
       }
     }
+    if (event.data.installOnly) {
+      return;
+    }
     window.chrome.runtime.sendMessage(extId, event.data, function (data) {
       event.source.postMessage(data, '*');
     });

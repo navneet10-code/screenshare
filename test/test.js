@@ -1,14 +1,14 @@
 /* global describe, it, beforeEach, afterEach */
 
-let USE_MOCK_WINDOW = false;
-if (typeof window === 'undefined') {
-  USE_MOCK_WINDOW = true;
-}
-
 import { assert } from 'chai';
 import sinon from 'sinon';
 import { initializeScreenShare, requestScreenShare } from '../';
 import { EventEmitter } from 'events';
+
+let USE_MOCK_WINDOW = false;
+if (typeof window === 'undefined') {
+  USE_MOCK_WINDOW = true;
+}
 
 class Window extends EventEmitter {
   constructor () {
