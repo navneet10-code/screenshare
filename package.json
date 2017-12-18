@@ -48,7 +48,7 @@
     "pre-push": "^0.1.1",
     "promish": "^5.0.2",
     "rollup": "^0.50.0",
-    "rollup-plugin-babel": "^3.0.2",
+    "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-uglify": "^2.0.0",
     "semistandard": "^11.0.0",
     "sinon": "^4.0.0",
