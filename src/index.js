@@ -1,8 +1,13 @@
 'use strict';
 
+let initialized = false;
+
 const initializeScreenShare = function (webstoreUrl) {
   if (!window.chrome || !window.chrome.webstore) {
     return; // this method works exclusively on chrome
+  }
+  if (initialized) {
+    return; // only initialize once on a single document
   }
   const handleMessage = function (event) {
     if (!event || !event.data || event.data.type !== 'getScreen') {
@@ -12,15 +17,14 @@ const initializeScreenShare = function (webstoreUrl) {
     if (!extId) {
       try {
         const getScreenMediaJSExtensionId = webstoreUrl.split('/').pop();
-        return window.chrome.webstore.install(webstoreUrl, function () {
-          setTimeout(function () {
-            window.sessionStorage.getScreenMediaJSExtensionId = getScreenMediaJSExtensionId;
-            if (event.data.installOnly) {
-              return event.source.postMessage(event.data, '*');
-            }
-            handleMessage(event);
-          }, 2500);
-        });
+        window.open(webstoreUrl, '_webstore');
+        setTimeout(function () {
+          window.sessionStorage.getScreenMediaJSExtensionId = getScreenMediaJSExtensionId;
+          if (event.data.installOnly) {
+            return event.source.postMessage(event.data, '*');
+          }
+          handleMessage(event);
+        }, 3500);
       } catch (err) {
         return event.source.postMessage({ err }, '*');
       }
@@ -32,6 +36,7 @@ const initializeScreenShare = function (webstoreUrl) {
       event.source.postMessage(data, '*');
     });
   };
+  initialized = true;
   window.addEventListener('message', handleMessage);
 };
 
@@ -57,6 +62,16 @@ const requestScreenShare = function (constraints, installOnly) {
       const handleMessage = function (event) {
         if (event && event.data === 'process-tick') {
           return; // ignore this, don't resolve or reject
+        }
+        if (window === window.parent) {
+          if (event && event.data &&
+              (event.data.type === 'getScreen' || event.data.type === 'getScreenPending')
+          ) {
+            return; // ignore, using on non-iframe
+          }
+          if (!event.data) {
+            return;
+          }
         }
         window.removeEventListener('message', handleMessage);
         if (!event || !event.data.sourceId) {
