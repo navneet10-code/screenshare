@@ -15,12 +15,13 @@ class Window extends EventEmitter {
     super();
     this.chrome = {
       webstore: {
-        install: () => {}
+        install: () => { throw new Error('webstore is gone!'); }
       },
       runtime: {
         sendMessage: () => {}
       }
     };
+    this.open = () => {};
     this.sessionStorage = {};
     this.location = { origin: 'https://examplesrus.com' };
     this.screen = { width: 100, height: 100 };
@@ -175,19 +176,19 @@ describe('initializeScreenShare', function () {
   it('will not set up a window event listener for message if not in chrome', function () {
     sandbox.spy(window, 'addEventListener');
     window.chrome = null;
-    initializeScreenShare();
+    initializeScreenShare(null, true); // force re-initialize
     sinon.assert.notCalled(window.addEventListener);
   });
 
   it('will set up a window event listener for a message if in chrome', function () {
     sandbox.spy(window, 'addEventListener');
-    initializeScreenShare();
+    initializeScreenShare(null, true); // force re-initialize
     sinon.assert.calledOnce(window.addEventListener);
     sinon.assert.calledWithExactly(window.addEventListener, 'message', sinon.match.func);
   });
 
   describe('the message handler', function () {
-    it('will send a message to the chrome extension', function (done) {
+    it('will open a new tab to the extension and set a timeout', function (done) {
       const extensionId = 'id-asdlfkjasdkd';
       const webstoreUrl = `https://test.example/test/${extensionId}`;
       window.sessionStorage.getScreenMediaJSExtensionId = extensionId;
@@ -200,7 +201,7 @@ describe('initializeScreenShare', function () {
         assert.equal(typeof callback, 'function');
         done();
       });
-      initializeScreenShare(webstoreUrl);
+      initializeScreenShare(webstoreUrl, true);
       window.postMessage(windowEvent);
     });
 
@@ -208,15 +209,14 @@ describe('initializeScreenShare', function () {
       this.timeout(3000); // the install process has a timeout of 2500
 
       const webstoreUrl = 'https://test.example';
-      sandbox.stub(window.chrome.webstore, 'install').callsFake(function (url, callback) {
+      sandbox.stub(window, 'open').callsFake(function (url, target) {
         assert.equal(url, webstoreUrl);
-        assert.equal(typeof callback, 'function');
-        callback();
+        assert.equal(target, '_webstore');
       });
       sandbox.stub(window.chrome.runtime, 'sendMessage').callsFake(function () {
         done();
       });
-      initializeScreenShare(webstoreUrl);
+      initializeScreenShare(webstoreUrl, true);
       window.postMessage({
         type: 'getScreen'
       });
@@ -224,46 +224,29 @@ describe('initializeScreenShare', function () {
 
     it('will not attempt to install the chrome extension if it appears to exist', function (done) {
       const webstoreUrl = 'https://test.example';
-      sandbox.stub(window.chrome.webstore, 'install').callsFake(function (url, callback) {
-        assert.ok(false, 'chrome webstore install should not have been called');
+      sandbox.stub(window, 'open').callsFake(function (url, target) {
+        assert.equal(url, webstoreUrl);
+        assert.equal(target, '_webstore');
+        assert.ok(false, 'window.open should not have been called');
       });
       sandbox.stub(window.chrome.runtime, 'sendMessage').callsFake(function () {
-        sinon.assert.notCalled(window.chrome.webstore.install);
+        sinon.assert.notCalled(window.open);
         done();
       });
       window.sessionStorage.getScreenMediaJSExtensionId = '1234';
-      initializeScreenShare(webstoreUrl);
+      initializeScreenShare(webstoreUrl, true);
       window.postMessage({
         type: 'getScreen'
       });
-    });
-
-    it('will post an error message back if install fails.', function (done) {
-      const webstoreUrl = 'https://test.example';
-      sandbox.stub(window.chrome.webstore, 'install').callsFake(function (url, callback) {
-        throw new Error('Chrome Web Store installations can only be initated by a user gesture.');
-      });
-      const frameWindow = {
-        postMessage: () => {}
-      };
-      sandbox.stub(frameWindow, 'postMessage').callsFake(function (msg) {
-        assert.ok(msg.err);
-        done();
-      });
-      initializeScreenShare(webstoreUrl);
-      window.postMessage({
-        type: 'getScreen'
-      }, frameWindow);
     });
 
     it('will will install the extension but not request media if installOnly is provided', function (done) {
       this.timeout(3000); // the install process has a timeout of 2500
 
       const webstoreUrl = 'https://test.example';
-      sandbox.stub(window.chrome.webstore, 'install').callsFake(function (url, callback) {
+      sandbox.stub(window, 'open').callsFake(function (url, target) {
         assert.equal(url, webstoreUrl);
-        assert.equal(typeof callback, 'function');
-        callback();
+        assert.equal(target, '_webstore');
       });
       sandbox.stub(window.chrome.runtime, 'sendMessage').callsFake(function () {
         assert.ok(false, 'Passed message to extension after installing.');
@@ -275,7 +258,7 @@ describe('initializeScreenShare', function () {
         assert.ok(msg.installOnly);
         done();
       });
-      initializeScreenShare(webstoreUrl);
+      initializeScreenShare(webstoreUrl, true);
       window.postMessage({
         type: 'getScreen',
         installOnly: true

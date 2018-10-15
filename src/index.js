@@ -2,11 +2,11 @@
 
 let initialized = false;
 
-const initializeScreenShare = function (webstoreUrl) {
+const initializeScreenShare = function (webstoreUrl, force) {
   if (!window.chrome || !window.chrome.webstore) {
     return; // this method works exclusively on chrome
   }
-  if (initialized) {
+  if (initialized && !force) {
     return; // only initialize once on a single document
   }
   const handleMessage = function (event) {
