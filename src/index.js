@@ -40,6 +40,18 @@ const initializeScreenShare = function (webstoreUrl, force) {
   window.addEventListener('message', handleMessage);
 };
 
+const DEFAULT_CHROME_CONSTRAINTS = {
+  audio: false,
+  video: {
+    mandatory: {
+      chromeMediaSource: 'desktop',
+      maxWidth: window.screen.width,
+      maxHeight: window.screen.height,
+      maxFrameRate: 15
+    }
+  }
+};
+
 const requestScreenShare = function (constraints, installOnly) {
   if (!window.navigator || !window.navigator.mediaDevices ||
       !window.navigator.mediaDevices.getUserMedia) {
@@ -57,6 +69,12 @@ const requestScreenShare = function (constraints, installOnly) {
       video: { mediaSource: 'window' }
     };
     return window.navigator.mediaDevices.getUserMedia(ffConstraints);
+  } else if (window.chrome && !window.chrome.runtime) {
+    if (installOnly) {
+      return Promise.resolve();
+    }
+    const chromeConstraints = (constraints && constraints.chrome) || DEFAULT_CHROME_CONSTRAINTS;
+    return window.navigator.mediaDevices.getUserMedia(chromeConstraints);
   } else {
     return new Promise(function (resolve, reject) {
       const handleMessage = function (event) {
@@ -83,18 +101,8 @@ const requestScreenShare = function (constraints, installOnly) {
           }
           return reject(new Error('User Cancellation'));
         }
-        const chromeConstraints = (constraints && constraints.chrome) || {
-          audio: false,
-          video: {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              maxWidth: window.screen.width,
-              maxHeight: window.screen.height,
-              maxFrameRate: 15,
-              chromeMediaSourceId: event.data.sourceId
-            }
-          }
-        };
+        const chromeConstraints = (constraints && constraints.chrome) || DEFAULT_CHROME_CONSTRAINTS;
+        chromeConstraints.video.mandatory.chromeMediaSourceId = event.data.sourceId;
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
       };
       window.addEventListener('message', handleMessage);
