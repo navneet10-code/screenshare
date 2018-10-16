@@ -40,17 +40,19 @@ const initializeScreenShare = function (webstoreUrl, force) {
   window.addEventListener('message', handleMessage);
 };
 
-const DEFAULT_CHROME_CONSTRAINTS = {
-  audio: false,
-  video: {
-    mandatory: {
-      chromeMediaSource: 'desktop',
-      maxWidth: window.screen.width,
-      maxHeight: window.screen.height,
-      maxFrameRate: 15
+function getDefaultChromeConstraints () {
+  return {
+    audio: false,
+    video: {
+      mandatory: {
+        chromeMediaSource: 'desktop',
+        maxWidth: window.screen.width,
+        maxHeight: window.screen.height,
+        maxFrameRate: 15
+      }
     }
-  }
-};
+  };
+}
 
 const requestScreenShare = function (constraints, installOnly) {
   if (!window.navigator || !window.navigator.mediaDevices ||
@@ -73,7 +75,7 @@ const requestScreenShare = function (constraints, installOnly) {
     if (installOnly) {
       return Promise.resolve();
     }
-    const chromeConstraints = (constraints && constraints.chrome) || DEFAULT_CHROME_CONSTRAINTS;
+    const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
     return window.navigator.mediaDevices.getUserMedia(chromeConstraints);
   } else {
     return new Promise(function (resolve, reject) {
@@ -101,7 +103,7 @@ const requestScreenShare = function (constraints, installOnly) {
           }
           return reject(new Error('User Cancellation'));
         }
-        const chromeConstraints = (constraints && constraints.chrome) || DEFAULT_CHROME_CONSTRAINTS;
+        const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
         chromeConstraints.video.mandatory.chromeMediaSourceId = event.data.sourceId;
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
       };
