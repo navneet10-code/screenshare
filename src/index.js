@@ -24,7 +24,7 @@ const initializeScreenShare = function (webstoreUrl, force) {
             return event.source.postMessage(event.data, '*');
           }
           handleMessage(event);
-        }, 3500);
+        }, 6000);
         return;
       } catch (err) {
         return event.source.postMessage({ err }, '*');
@@ -110,7 +110,7 @@ const requestScreenShare = function (constraints, installOnly) {
       };
       setTimeout(function () {
         reject(new Error('Screen capture timeout'));
-      }, 4000);
+      }, 6500);
       window.addEventListener('message', handleMessage);
       window.parent.postMessage({ type: 'getScreen', installOnly, id: 1, url: window.location.origin }, '*');
     });
