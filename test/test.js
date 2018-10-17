@@ -61,11 +61,6 @@ describe('requestScreenShare', function () {
     sandbox.restore();
   });
 
-  it('runs', function () {
-    requestScreenShare();
-    assert.ok(true);
-  });
-
   it('will not set up a window event listener for message if not in chrome', function () {
     sandbox.spy(window, 'addEventListener');
     window.chrome = null;

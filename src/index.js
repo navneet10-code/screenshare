@@ -108,6 +108,9 @@ const requestScreenShare = function (constraints, installOnly) {
         chromeConstraints.video.mandatory.chromeMediaSourceId = event.data.sourceId;
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
       };
+      setTimeout(function () {
+        reject(new Error('Screen capture timeout'));
+      }, 4000);
       window.addEventListener('message', handleMessage);
       window.parent.postMessage({ type: 'getScreen', installOnly, id: 1, url: window.location.origin }, '*');
     });
