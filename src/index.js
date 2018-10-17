@@ -84,18 +84,18 @@ const requestScreenShare = function (constraints, installOnly) {
         if (event && event.data === 'process-tick') {
           return; // ignore this, don't resolve or reject
         }
+        if (!event || !event.data) {
+          return; // this is not for us either
+        }
         if (window === window.parent) {
           if (event && event.data &&
               (event.data.type === 'getScreen' || event.data.type === 'getScreenPending')
           ) {
             return; // ignore, using on non-iframe
           }
-          if (!event.data) {
-            return;
-          }
         }
         window.removeEventListener('message', handleMessage);
-        if (!event || !event.data.sourceId) {
+        if (!event.data.sourceId) {
           if (event.data.err) {
             return reject(event.data.err);
           }
