@@ -202,7 +202,7 @@ describe('initializeScreenShare', function () {
     });
 
     it('will attempt to install the chrome extension if it does not exist, then send the message to the extension', function (done) {
-      this.timeout(4000); // the install process has a timeout of 3500
+      this.timeout(10000); // the install process has a longer timeout
 
       const webstoreUrl = 'https://test.example';
       sandbox.stub(window, 'open').callsFake(function (url, target) {
@@ -237,7 +237,7 @@ describe('initializeScreenShare', function () {
     });
 
     it('will will install the extension but not request media if installOnly is provided', function (done) {
-      this.timeout(4000); // the install process has a timeout of 3500
+      this.timeout(10000); // the install process has a longer timeout
 
       const webstoreUrl = 'https://test.example';
       sandbox.stub(window, 'open').callsFake(function (url, target) {
