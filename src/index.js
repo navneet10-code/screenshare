@@ -25,6 +25,7 @@ const initializeScreenShare = function (webstoreUrl, force) {
           }
           handleMessage(event);
         }, 3500);
+        return;
       } catch (err) {
         return event.source.postMessage({ err }, '*');
       }

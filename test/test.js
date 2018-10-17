@@ -32,6 +32,7 @@ class Window extends EventEmitter {
         getUserMedia () {}
       }
     };
+    this.parent = this;
   }
 
   addEventListener (event, func) {
@@ -53,7 +54,7 @@ describe('requestScreenShare', function () {
     if (USE_MOCK_WINDOW) {
       global.window = new Window();
     }
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -161,7 +162,7 @@ describe('initializeScreenShare', function () {
     if (USE_MOCK_WINDOW) {
       global.window = new Window();
     }
-    sandbox = sinon.sandbox.create();
+    sandbox = sinon.createSandbox();
   });
 
   afterEach(function () {
@@ -206,7 +207,7 @@ describe('initializeScreenShare', function () {
     });
 
     it('will attempt to install the chrome extension if it does not exist, then send the message to the extension', function (done) {
-      this.timeout(3000); // the install process has a timeout of 2500
+      this.timeout(4000); // the install process has a timeout of 3500
 
       const webstoreUrl = 'https://test.example';
       sandbox.stub(window, 'open').callsFake(function (url, target) {
@@ -241,7 +242,7 @@ describe('initializeScreenShare', function () {
     });
 
     it('will will install the extension but not request media if installOnly is provided', function (done) {
-      this.timeout(3000); // the install process has a timeout of 2500
+      this.timeout(4000); // the install process has a timeout of 3500
 
       const webstoreUrl = 'https://test.example';
       sandbox.stub(window, 'open').callsFake(function (url, target) {
