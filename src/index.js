@@ -34,6 +34,7 @@ const initializeScreenShare = function (webstoreUrl, force) {
       return event.source.postMessage(event.data, '*');
     }
     window.chrome.runtime.sendMessage(extId, event.data, function (data) {
+      data.id = event.data.id;
       event.source.postMessage(data, '*');
     });
   };
@@ -54,6 +55,8 @@ function getDefaultChromeConstraints () {
     }
   };
 }
+
+let messageCounter = 0;
 
 const requestScreenShare = function (constraints, installOnly) {
   if (!window.navigator || !window.navigator.mediaDevices ||
@@ -79,13 +82,18 @@ const requestScreenShare = function (constraints, installOnly) {
     const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
     return window.navigator.mediaDevices.getUserMedia(chromeConstraints);
   } else {
+    const messageId = messageCounter++;
     return new Promise(function (resolve, reject) {
+      let boundFunction;
       const handleMessage = function (event) {
         if (event && event.data === 'process-tick') {
           return; // ignore this, don't resolve or reject
         }
         if (!event || !event.data) {
           return; // this is not for us either
+        }
+        if (event.data.id !== messageId) {
+          return;
         }
         if (window === window.parent) {
           if (event && event.data &&
@@ -94,7 +102,7 @@ const requestScreenShare = function (constraints, installOnly) {
             return; // ignore, using on non-iframe
           }
         }
-        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('message', boundFunction);
         if (!event.data.sourceId) {
           if (event.data.err) {
             return reject(event.data.err);
@@ -108,11 +116,12 @@ const requestScreenShare = function (constraints, installOnly) {
         chromeConstraints.video.mandatory.chromeMediaSourceId = event.data.sourceId;
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
       };
+      boundFunction = handleMessage.bind(this);
       setTimeout(function () {
         reject(new Error('Screen capture timeout'));
       }, 6500);
-      window.addEventListener('message', handleMessage);
-      window.parent.postMessage({ type: 'getScreen', installOnly, id: 1, url: window.location.origin }, '*');
+      window.addEventListener('message', boundFunction);
+      window.parent.postMessage({ type: 'getScreen', installOnly, id: messageId, url: window.location.origin }, '*');
     });
   }
 };

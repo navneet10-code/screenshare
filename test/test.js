@@ -100,7 +100,7 @@ describe('requestScreenShare', function () {
     sandbox.stub(window.parent, 'postMessage').callsFake(function (options) {
       assert.equal(options.type, 'getScreen');
       assert.equal(options.url, window.location.origin);
-      window.postMessage({ sourceId });
+      window.postMessage({ sourceId, id: options.id });
     });
     sandbox.stub(window.navigator.mediaDevices, 'getUserMedia').callsFake(function (constraints) {
       assert.equal(constraints.audio, false);
@@ -128,9 +128,9 @@ describe('requestScreenShare', function () {
       assert.equal(options.type, 'getScreen');
       assert.equal(options.url, window.location.origin);
       if (!options.installOnly) {
-        window.postMessage({ sourceId });
+        window.postMessage({ sourceId, id: options.id });
       } else {
-        window.postMessage({ installOnly: true });
+        window.postMessage({ installOnly: true, id: options.id });
       }
     });
     sandbox.stub(window.navigator.mediaDevices, 'getUserMedia').callsFake(function (constraints) {
