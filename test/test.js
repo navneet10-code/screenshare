@@ -43,8 +43,11 @@ class Window extends EventEmitter {
     this.removeListener(event, func);
   }
 
-  postMessage (message, source) {
-    this.emit('message', { data: message, source });
+  postMessage (data, source) {
+    this.emit('message', {
+      data,
+      source: typeof source === 'object' ? source : global.window
+    });
   }
 }
 
@@ -236,7 +239,7 @@ describe('initializeScreenShare', function () {
       });
     });
 
-    it('will will install the extension but not request media if installOnly is provided', function (done) {
+    it('will install the extension but not request media if installOnly is provided', function (done) {
       this.timeout(10000); // the install process has a longer timeout
 
       const webstoreUrl = 'https://test.example';
@@ -259,6 +262,25 @@ describe('initializeScreenShare', function () {
         type: 'getScreen',
         installOnly: true
       }, frameWindow);
+    });
+
+    it('will not loop into eternity if done on the same window', function () {
+      this.timeout(10000); // the install process has a longer timeout
+
+      const webstoreUrl = 'https://test.example';
+      sandbox.stub(window, 'open').callsFake(function (url, target) {
+        assert.equal(url, webstoreUrl);
+        assert.equal(target, '_webstore');
+      });
+      sandbox.stub(window.chrome.runtime, 'sendMessage').callsFake(function () {
+        assert.ok(false, 'Passed message to extension after installing.');
+      });
+      sinon.spy(window, 'postMessage');
+      initializeScreenShare(webstoreUrl, true);
+      return requestScreenShare(null, true)
+        .then(() => {
+          sinon.assert.calledTwice(window.postMessage);
+        });
     });
   });
 });

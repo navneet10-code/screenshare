@@ -21,6 +21,7 @@ const initializeScreenShare = function (webstoreUrl, force) {
         setTimeout(function () {
           window.sessionStorage.getScreenMediaJSExtensionId = getScreenMediaJSExtensionId;
           if (event.data.installOnly) {
+            event.data.type = 'gotScreen';
             return event.source.postMessage(event.data, '*');
           }
           handleMessage(event);
@@ -31,6 +32,7 @@ const initializeScreenShare = function (webstoreUrl, force) {
       }
     }
     if (event.data.installOnly) {
+      event.data.type = 'gotScreen';
       return event.source.postMessage(event.data, '*');
     }
     window.chrome.runtime.sendMessage(extId, event.data, function (data) {
