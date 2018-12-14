@@ -3,7 +3,7 @@
 let initialized = false;
 
 const initializeScreenShare = function (webstoreUrl, force) {
-  if (!window.chrome || !window.chrome.webstore) {
+  if (!window.chrome) {
     return; // this method works exclusively on chrome
   }
   if (initialized && !force) {

@@ -14,9 +14,6 @@ class Window extends EventEmitter {
   constructor () {
     super();
     this.chrome = {
-      webstore: {
-        install: () => { throw new Error('webstore is gone!'); }
-      },
       runtime: {
         sendMessage: () => {}
       }
