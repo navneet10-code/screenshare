@@ -119,9 +119,6 @@ const requestScreenShare = function (constraints, installOnly) {
         window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
       };
       boundFunction = handleMessage.bind(this);
-      setTimeout(function () {
-        reject(new Error('Screen capture timeout'));
-      }, 6500);
       window.addEventListener('message', boundFunction);
       window.parent.postMessage({ type: 'getScreen', installOnly, id: messageId, url: window.location.origin }, '*');
     });
