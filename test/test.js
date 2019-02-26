@@ -86,6 +86,26 @@ describe('requestScreenShare', function () {
     return requestScreenShare();
   });
 
+  it('will immediately call getDisplayMedia if not in chrome, and getDisplayMedia exists', function () {
+    window.navigator = {
+      mediaDevices: {
+        getUserMedia: () => {},
+        getDisplayMedia: () => {}
+      }
+    };
+    window.chrome = null;
+    sandbox.stub(window.navigator.mediaDevices, 'getUserMedia');
+    sandbox.stub(window.navigator.mediaDevices, 'getDisplayMedia').callsFake(constraints => {
+      assert.equal(constraints.audio, false);
+      assert.equal(constraints.video.mediaSource, 'window');
+      return Promise.resolve();
+    });
+    return requestScreenShare().then(() => {
+      sinon.assert.notCalled(window.navigator.mediaDevices.getUserMedia);
+      sinon.assert.calledOnce(window.navigator.mediaDevices.getDisplayMedia);
+    });
+  });
+
   it('will request screen share via the chrome iframe method and resolve', function () {
     const sourceId = '123591911019385';
     const mockStream = {};
@@ -148,6 +168,31 @@ describe('requestScreenShare', function () {
         assert.equal(stream, mockStream);
         sinon.assert.calledOnce(window.navigator.mediaDevices.getUserMedia);
       });
+  });
+
+  it('will request screen share via getDisplayMedia if available and NOT the iframe method', function () {
+    const mockStream = {};
+    window.navigator = {
+      mediaDevices: {
+        getUserMedia: () => {},
+        getDisplayMedia: () => {}
+      }
+    };
+    window.parent = {
+      postMessage: () => {}
+    };
+    sandbox.stub(window.parent, 'postMessage');
+    sandbox.stub(window.navigator.mediaDevices, 'getUserMedia');
+    sandbox.stub(window.navigator.mediaDevices, 'getDisplayMedia').callsFake(function (constraints) {
+      assert.equal(constraints.audio, false);
+      assert.equal(constraints.video.displaySurface, 'monitor');
+      return Promise.resolve(mockStream);
+    });
+    return requestScreenShare().then((stream) => {
+      sinon.assert.notCalled(window.parent.postMessage);
+      sinon.assert.notCalled(window.navigator.mediaDevices.getUserMedia);
+      assert.equal(stream, mockStream);
+    });
   });
 });
 

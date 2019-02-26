@@ -15,6 +15,10 @@ const initializeScreenShare = function (webstoreUrl, force) {
     }
     const extId = window.sessionStorage.getScreenMediaJSExtensionId;
     if (!extId) {
+      if (!webstoreUrl) {
+        console.error('No webstore url provided, and no extension is installed');
+        return;
+      }
       try {
         const getScreenMediaJSExtensionId = webstoreUrl.split('/').pop();
         window.open(webstoreUrl, '_webstore');
@@ -28,7 +32,8 @@ const initializeScreenShare = function (webstoreUrl, force) {
         }, 6000);
         return;
       } catch (err) {
-        return event.source.postMessage({ err }, '*');
+        console.error(err);
+        return event.source.postMessage({ err: err.message }, '*');
       }
     }
     if (event.data.installOnly) {
@@ -45,6 +50,14 @@ const initializeScreenShare = function (webstoreUrl, force) {
 };
 
 function getDefaultChromeConstraints () {
+  if (window.navigator.mediaDevices.getDisplayMedia) {
+    return {
+      audio: false,
+      video: {
+        displaySurface: 'monitor'
+      }
+    };
+  }
   return {
     audio: false,
     video: {
@@ -59,6 +72,15 @@ function getDefaultChromeConstraints () {
 }
 
 let messageCounter = 0;
+
+function capture (constraints) {
+  if (window.navigator.mediaDevices.getDisplayMedia) {
+    console.log('iframeScreenshare Using getDisplayMedia');
+    return window.navigator.mediaDevices.getDisplayMedia(constraints);
+  }
+  console.log('iframeScreenshare Using getUserMedia');
+  return window.navigator.mediaDevices.getUserMedia(constraints);
+}
 
 const requestScreenShare = function (constraints, installOnly) {
   if (!window.navigator || !window.navigator.mediaDevices ||
@@ -76,13 +98,16 @@ const requestScreenShare = function (constraints, installOnly) {
       audio: false,
       video: { mediaSource: 'window' }
     };
-    return window.navigator.mediaDevices.getUserMedia(ffConstraints);
+    return capture(ffConstraints);
   } else if (window.chrome && !window.chrome.runtime) {
     if (installOnly) {
       return Promise.resolve();
     }
     const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
-    return window.navigator.mediaDevices.getUserMedia(chromeConstraints);
+    return capture(chromeConstraints);
+  } else if (window.navigator.mediaDevices.getDisplayMedia) {
+    const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
+    return capture(chromeConstraints);
   } else {
     const messageId = messageCounter++;
     return new Promise(function (resolve, reject) {
@@ -116,7 +141,7 @@ const requestScreenShare = function (constraints, installOnly) {
         }
         const chromeConstraints = (constraints && constraints.chrome) || getDefaultChromeConstraints();
         chromeConstraints.video.mandatory.chromeMediaSourceId = event.data.sourceId;
-        window.navigator.mediaDevices.getUserMedia(chromeConstraints).then(resolve, reject);
+        return capture(chromeConstraints).then(resolve, reject);
       };
       boundFunction = handleMessage.bind(this);
       window.addEventListener('message', boundFunction);
